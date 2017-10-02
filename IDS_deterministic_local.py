@@ -1,7 +1,6 @@
 
-# coding: utf-8
-
-# In[5]:
+# code for IDS with deterministic local search
+# requires installation of python package apyori
 
 import numpy as np
 import pandas as pd
@@ -9,9 +8,9 @@ import math
 from apyori import apriori
 
 
-# In[6]:
-
-# itemset (each rule predicate --> class label)
+# rule is of the form if A == a and B == b, then class_1
+# one of the member variables is itemset - a set of patterns {(A,a), (B,b)}
+# the other member variable is class_label (e.g., class_1)
 class rule:
     
     def __init__(self,feature_list,value_list,class_label):
@@ -70,8 +69,7 @@ class rule:
         return (sorted(list(set(full_cover) - set(correct_cover))))
 
 
-# In[7]:
-
+# below function basically takes a data frame and a support threshold and returns itemsets which satisfy the threshold
 def run_apriori(df, support_thres):
     # the idea is to basically make a list of strings out of df and run apriori api on it 
     # return the frequent itemsets
@@ -94,8 +92,7 @@ def run_apriori(df, support_thres):
     return list_itemsets
 
 
-# In[8]:
-
+# This function converts a list of itemsets (stored as list of lists of strings) into rule objects
 def createrules(freq_itemsets, labels_set):
     # create a list of rule objects from frequent itemsets 
     list_of_rules = []
@@ -113,8 +110,7 @@ def createrules(freq_itemsets, labels_set):
     return list_of_rules
 
 
-# In[9]:
-
+# compute the maximum length of any rule in the candidate rule set
 def max_rule_length(list_rules):
     len_arr = []
     for r in list_rules:
@@ -122,14 +118,12 @@ def max_rule_length(list_rules):
     return max(len_arr)
 
 
-# In[10]:
-
+# compute the number of points which are covered both by r1 and r2 w.r.t. data frame df
 def overlap(r1, r2, df):
     return sorted(list(set(r1.get_cover(df)).intersection(set(r2.get_cover(df)))))
 
 
-# In[11]:
-
+# computes the objective value of a given solution set
 def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
     # evaluate the objective function based on rules in solution set 
     # soln set is a set of indexes which when used to index elements in list_rules point to the exact rules in the solution set
@@ -201,8 +195,7 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
     return obj_val
 
 
-# In[22]:
-
+# deterministic local search algorithm which returns a solution set as well as the corresponding objective value
 def deterministic_local_search(list_rules, df, Y, lambda_array, epsilon):
     # step by step implementation of deterministic local search algorithm in the 
     # FOCS paper: https://people.csail.mit.edu/mirrokni/focs07.pdf (page 4-5)
@@ -268,15 +261,10 @@ def deterministic_local_search(list_rules, df, Y, lambda_array, epsilon):
             
 
 
-# In[13]:
-
+# input data and function calls 
 df = pd.read_csv('titanic_train.tab',' ', header=None, names=['Passenger_Cat', 'Age_Cat', 'Gender'])
 df1 = pd.read_csv('titanic_train.Y', ' ', header=None, names=['Died', 'Survived'])
 Y = list(df1['Died'].values)
-df1.head()
-
-
-# In[25]:
 
 itemsets = run_apriori(df, 0.1)
 list_of_rules = createrules(itemsets, list(set(Y)))
