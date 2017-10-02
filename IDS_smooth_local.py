@@ -1,17 +1,15 @@
 
-# coding: utf-8
-
-# In[ ]:
+# code for IDS with smooth local search
+# requires installation of python package apyori
 
 import numpy as np
 import pandas as pd
 import math
 from apyori import apriori
 
-
-# In[ ]:
-
-# itemset (each rule predicate --> class label)
+# rule is of the form if A == a and B == b, then class_1
+# one of the member variables is itemset - a set of patterns {(A,a), (B,b)}
+# the other member variable is class_label (e.g., class_1)
 class rule:
     
     def __init__(self,feature_list,value_list,class_label):
@@ -70,8 +68,7 @@ class rule:
         return (sorted(list(set(full_cover) - set(correct_cover))))
 
 
-# In[ ]:
-
+# below function basically takes a data frame and a support threshold and returns itemsets which satisfy the threshold
 def run_apriori(df, support_thres):
     # the idea is to basically make a list of strings out of df and run apriori api on it 
     # return the frequent itemsets
@@ -94,8 +91,7 @@ def run_apriori(df, support_thres):
     return list_itemsets
 
 
-# In[ ]:
-
+# This function converts a list of itemsets (stored as list of lists of strings) into rule objects
 def createrules(freq_itemsets, labels_set):
     # create a list of rule objects from frequent itemsets 
     list_of_rules = []
@@ -113,8 +109,7 @@ def createrules(freq_itemsets, labels_set):
     return list_of_rules
 
 
-# In[ ]:
-
+# compute the maximum length of any rule in the candidate rule set
 def max_rule_length(list_rules):
     len_arr = []
     for r in list_rules:
@@ -122,14 +117,12 @@ def max_rule_length(list_rules):
     return max(len_arr)
 
 
-# In[ ]:
-
+# compute the number of points which are covered both by r1 and r2 w.r.t. data frame df
 def overlap(r1, r2, df):
     return sorted(list(set(r1.get_cover(df)).intersection(set(r2.get_cover(df)))))
 
 
-# In[ ]:
-
+# computes the objective value of a given solution set
 def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
     # evaluate the objective function based on rules in solution set 
     # soln set is a set of indexes which when used to index elements in list_rules point to the exact rules in the solution set
@@ -201,8 +194,7 @@ def func_evaluation(soln_set, list_rules, df, Y, lambda_array):
     return obj_val
 
 
-# In[ ]:
-
+# Helper function for smooth_local_search routine: Samples a set of elements based on delta 
 def sample_random_set(soln_set, delta, len_list_rules):
     all_rule_indexes = set(range(len_list_rules))
     return_set = set()
@@ -226,8 +218,7 @@ def sample_random_set(soln_set, delta, len_list_rules):
     return return_set
 
 
-# In[ ]:
-
+# Helper function for smooth_local_search routine: Computes estimated gain of adding an element to the solution set
 def estimate_omega_for_element(soln_set, delta, rule_x_index, list_rules, df, Y, lambda_array, error_threshold):
     #assumes rule_x_index is not in soln_set 
     
@@ -262,8 +253,7 @@ def estimate_omega_for_element(soln_set, delta, rule_x_index, list_rules, df, Y,
     return np.mean(Exp1_func_vals) - np.mean(Exp2_func_vals)
 
 
-# In[ ]:
-
+# Helper function for smooth_local_search routine: Computes the 'estimate' of optimal value using random search 
 def compute_OPT(list_rules, df, Y, lambda_array):
     opt_set = set()
     for i in range(len(list_rules)):
@@ -273,8 +263,7 @@ def compute_OPT(list_rules, df, Y, lambda_array):
     return func_evaluation(opt_set, list_rules, df, Y, lambda_array)
 
 
-# In[ ]:
-
+# smooth local search algorithm which returns a solution set
 def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime):
     # step by step implementation of smooth local search algorithm in the 
     # FOCS paper: https://people.csail.mit.edu/mirrokni/focs07.pdf (page 6)
@@ -333,15 +322,13 @@ def smooth_local_search(list_rules, df, Y, lambda_array, delta, delta_prime):
         return sample_random_set(soln_set, delta_prime, n)
 
 
-# In[ ]:
+# input data and function calls 
 
 df = pd.read_csv('titanic_train.tab',' ', header=None, names=['Passenger_Cat', 'Age_Cat', 'Gender'])
 df1 = pd.read_csv('titanic_train.Y', ' ', header=None, names=['Died', 'Survived'])
 Y = list(df1['Died'].values)
 df1.head()
 
-
-# In[ ]:
 
 itemsets = run_apriori(df, 0.2)
 list_of_rules = createrules(itemsets, list(set(Y)))
