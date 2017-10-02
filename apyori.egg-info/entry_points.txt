@@ -1,0 +1,3 @@
+[console_scripts]
+apyori-run = apyori:main
+
