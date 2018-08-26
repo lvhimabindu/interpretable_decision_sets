@@ -1,6 +1,6 @@
 
 # code for IDS with smooth local search
-# requires installation of python package apyori
+# requires installation of python package apyori: https://pypi.org/project/apyori/
 
 import numpy as np
 import pandas as pd
